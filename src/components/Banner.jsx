@@ -49,7 +49,7 @@ const Banner = () => {
           <Button
             size="large"
             variant="contained"
-            onClick={() => navigate("/all-food-items")}
+            onClick={() => navigate("/dashboard")}
           >
             Explore Now
           </Button>
