@@ -51,7 +51,7 @@ const Banner = () => {
             variant="contained"
             onClick={() => navigate("/dashboard")}
           >
-            Explore Now
+            {`Let's Explore`}
           </Button>
         </Box>
       </Container>
