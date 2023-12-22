@@ -37,7 +37,7 @@ import {
 
 import { CSS } from "@dnd-kit/utilities";
 
-const tasks = [
+const DATA = [
   {
     id: 1,
     title: "Update Marketing Presentation",
@@ -81,7 +81,7 @@ const tasks = [
       "Analyze and assess financial reports for Q1, highlighting key performance indicators and identifying areas for improvement.",
     deadline: "2023-02-28",
     priority: "High",
-    status: "completed",
+    status: "complete",
   },
   {
     id: 6,
@@ -134,6 +134,8 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [activeTask, setActiveTask] = useState(null);
 
+  // eslint-disable-next-line no-unused-vars
+  const [tasks, setTasks] = useState(DATA);
   const [todo, setTodo] = useState([]);
   const [ongoing, setOngoing] = useState([]);
   const [complete, setComplete] = useState([]);
@@ -141,8 +143,8 @@ const Dashboard = () => {
   useEffect(() => {
     setTodo(tasks.filter((task) => task.status === "to_do"));
     setOngoing(tasks.filter((task) => task.status === "ongoing"));
-    setComplete(tasks.filter((task) => task.status === "completed"));
-  }, []);
+    setComplete(tasks.filter((task) => task.status === "complete"));
+  }, [tasks]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
@@ -180,7 +182,7 @@ const Dashboard = () => {
           >
             <TaskContainer id="todo" text="Todo" tasks={todo} />
             <TaskContainer id="ongoing" text="Ongoing" tasks={ongoing} />
-            <TaskContainer id="complete" text="Completed" tasks={complete} />
+            <TaskContainer id="complete" text="complete" tasks={complete} />
             <DragOverlay>
               {activeTask ? (
                 <TaskItem id={activeTask.id} task={activeTask} />
@@ -194,15 +196,118 @@ const Dashboard = () => {
 
   function handleDragStart(event) {
     setActiveTask(event.active.data.current.task);
-    // console.log(event.active.data.current.task);
   }
 
   function handleDragOver(event) {
-    console.log("over:", event);
+    // console.log("over:", event);
+
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    const activeTask = active.data.current.task;
+    const overTask = over.data.current.task;
+
+    if (activeTask.status !== overTask?.status) {
+      if (
+        activeTask.status === "to_do" &&
+        (overTask?.status === "ongoing" || over?.id === "ongoing")
+      ) {
+        setTodo((prev) => prev.filter((task) => task.id !== activeTask.id));
+        setOngoing([{ ...activeTask, status: "ongoing" }, ...ongoing]);
+      } else if (
+        activeTask.status === "to_do" &&
+        (overTask?.status === "complete" || over?.id === "complete")
+      ) {
+        setTodo((prev) => prev.filter((task) => task.id !== activeTask.id));
+        setComplete([{ ...activeTask, status: "complete" }, ...complete]);
+      } else if (
+        activeTask.status === "ongoing" &&
+        (overTask?.status === "to_do" || over?.id === "todo")
+      ) {
+        setOngoing((prev) => prev.filter((task) => task.id !== activeTask.id));
+        setTodo([{ ...activeTask, status: "to_do" }, ...todo]);
+      } else if (
+        activeTask.status === "ongoing" &&
+        (overTask?.status === "complete" || over?.id === "complete")
+      ) {
+        setOngoing((prev) => prev.filter((task) => task.id !== activeTask.id));
+        setComplete([{ ...activeTask, status: "complete" }, ...complete]);
+      } else if (
+        activeTask.status === "complete" &&
+        (overTask?.status === "to_do" || over?.id === "todo")
+      ) {
+        setComplete((prev) => prev.filter((task) => task.id !== activeTask.id));
+        setTodo([{ ...activeTask, status: "to_do" }, ...todo]);
+      } else if (
+        activeTask.status === "complete" &&
+        (overTask?.status === "ongoing" || over?.id === "ongoing")
+      ) {
+        setComplete((prev) => prev.filter((task) => task.id !== activeTask.id));
+        setOngoing([{ ...activeTask, status: "ongoing" }, ...ongoing]);
+      }
+    }
   }
 
   function handleDragEnd(event) {
-    console.log("end:", event);
+    // console.log("end:", event);
+    setActiveTask(null);
+
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    const activeTask = active.data.current.task;
+    const overTask = over.data.current.task;
+
+    if (activeTask.status === overTask?.status) {
+      if (activeTask.status === "to_do")
+        setTodo((prev_tasks) => {
+          const activeTaskIndex = prev_tasks.findIndex(
+            (task) => task.id === activeId
+          );
+
+          const overtTaskIndex = prev_tasks.findIndex(
+            (task) => task.id === overId
+          );
+
+          return arrayMove(prev_tasks, activeTaskIndex, overtTaskIndex);
+        });
+
+      if (activeTask.status === "complete")
+        setComplete((prev_tasks) => {
+          const activeTaskIndex = prev_tasks.findIndex(
+            (task) => task.id === activeId
+          );
+
+          const overtTaskIndex = prev_tasks.findIndex(
+            (task) => task.id === overId
+          );
+
+          return arrayMove(prev_tasks, activeTaskIndex, overtTaskIndex);
+        });
+
+      if (activeTask.status === "ongoing")
+        setOngoing((prev_tasks) => {
+          const activeTaskIndex = prev_tasks.findIndex(
+            (task) => task.id === activeId
+          );
+
+          const overtTaskIndex = prev_tasks.findIndex(
+            (task) => task.id === overId
+          );
+
+          return arrayMove(prev_tasks, activeTaskIndex, overtTaskIndex);
+        });
+    }
   }
 };
 
@@ -211,6 +316,9 @@ export default Dashboard;
 const TaskContainer = ({ id, text, tasks }) => {
   const { setNodeRef } = useDroppable({
     id,
+    data: {
+      type: "Container",
+    },
   });
 
   const ids = useMemo(() => {
@@ -279,7 +387,7 @@ const TaskItem = ({ task }) => {
         {...attributes}
         {...listeners}
         style={style}
-        sx={{ width: "100%", border: "1px solid black", opacity: .5 }}
+        sx={{ width: "100%", border: "1px solid black", opacity: 0.5 }}
       >
         <CardContent>
           <Stack
