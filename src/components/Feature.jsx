@@ -36,7 +36,7 @@ const Feature = () => {
           <Typography color="white" sx={{ textShadow: "2px 2px 4px rgba(0, 0, 0, .75)" }} variant="h5" component="li">Journalists</Typography>
           <Typography color="white" sx={{ textShadow: "2px 2px 4px rgba(0, 0, 0, .75)" }} variant="h5" component="li">Teachers</Typography>
           <Typography color="white" sx={{ textShadow: "2px 2px 4px rgba(0, 0, 0, .75)" }} variant="h5" component="li">Students</Typography>
-          <Typography color="white" sx={{ textShadow: "2px 2px 4px rgba(0, 0, 0, .75)" }} variant="h5" component="li">and Mnay ohters ...</Typography>
+          <Typography color="white" sx={{ textShadow: "2px 2px 4px rgba(0, 0, 0, .75)" }} variant="h5" component="li">and Many ohters ...</Typography>
         </Typography>
       </Container>
     </Box>
