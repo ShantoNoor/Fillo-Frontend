@@ -20,7 +20,7 @@ import useAuth from "../hooks/useAuth";
 import DragHandleIcon from "@mui/icons-material/DragHandle";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import SelectFormField from "../components/SelectFormField";
 import { DatePicker } from "@mui/x-date-pickers";
 import AddIcon from "@mui/icons-material/Add";
@@ -333,11 +333,6 @@ const Dashboard = () => {
 
   function handleDragEnd(event) {
     _handleDragEnd_(event);
-
-    // console.log(JSON.stringify(todo));
-    // console.log(JSON.stringify(ongoing));
-    // console.log(JSON.stringify(complete));
-
     addToDb();
   }
 
@@ -430,10 +425,6 @@ const TaskContainer = ({ id, text, tasks, setTasks }) => {
       type: "Container",
     },
   });
-
-  // const ids = useMemo(() => {
-  //   return tasks?.map((task) => task.id);
-  // }, [tasks]);
 
   return (
     <>
@@ -602,7 +593,11 @@ const TaskItem = ({ task }) => {
         <IconButton>
           <EditIcon />
         </IconButton>
-        <IconButton>
+        <IconButton
+          onClick={() => {
+            console.log(task);
+          }}
+        >
           <DeleteIcon />
         </IconButton>
       </CardActions>
