@@ -1,6 +1,5 @@
 import {
   Box,
-  Button,
   Card,
   CardActions,
   CardContent,
@@ -15,7 +14,28 @@ import useAuth from "../hooks/useAuth";
 import DragHandleIcon from "@mui/icons-material/DragHandle";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import {
+  DndContext,
+  DragOverlay,
+  rectIntersection,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  KeyboardSensor,
+  useDroppable,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  sortableKeyboardCoordinates,
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+
+import { CSS } from "@dnd-kit/utilities";
 
 const tasks = [
   {
@@ -112,6 +132,7 @@ const tasks = [
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [activeTask, setActiveTask] = useState(null);
 
   const [todo, setTodo] = useState([]);
   const [ongoing, setOngoing] = useState([]);
@@ -122,6 +143,14 @@ const Dashboard = () => {
     setOngoing(tasks.filter((task) => task.status === "ongoing"));
     setComplete(tasks.filter((task) => task.status === "completed"));
   }, []);
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
+    useSensor(TouchSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   return (
     <Box
@@ -142,216 +171,211 @@ const Dashboard = () => {
           justifyContent={"space-between"}
           alignItems={"center"}
         >
-          <Box
-            flex={1}
-            width={"100%"}
-            border="1px solid white"
-            borderRadius={1}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={rectIntersection}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
           >
-            <Typography
-              variant="h6"
-              component="h3"
-              textAlign="center"
-              py={1}
-              bgcolor={"primary.main"}
-              color="white"
-            >
-              Todo
-            </Typography>
-            <Box height={{ xs: "35vh", md: "76vh" }} overflow="scroll">
-              {todo.map((task) => (
-                <Card
-                  key={task.id}
-                  sx={{ width: "100%", border: "1px solid black" }}
-                >
-                  <CardContent>
-                    <Stack
-                      direction={"row"}
-                      alignItems={"start"}
-                      justifyContent={"space-around"}
-                    >
-                      <Box flex={1}>
-                        <DragHandleIcon />
-                      </Box>
-                      <Box flex={1}>
-                        <Typography
-                          sx={{ fontSize: 14 }}
-                          color="primary.main"
-                          gutterBottom
-                          textAlign={"right"}
-                        >
-                          Priority: {task.priority}
-                        </Typography>
-                        <Typography
-                          sx={{ fontSize: 14, color: "red" }}
-                          color="text.secondary"
-                          textAlign={"right"}
-                          gutterBottom
-                        >
-                          {task.deadline}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                    <Typography variant="h5" component="div">
-                      {task.title}
-                    </Typography>
-                    <Divider sx={{ mb: 1 }} />
-                    <Typography variant="body2">{task.description}</Typography>
-                  </CardContent>
-                  <CardActions>
-                    <IconButton>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton>
-                      <DeleteIcon />
-                    </IconButton>
-                  </CardActions>
-                </Card>
-              ))}
-            </Box>
-          </Box>
-
-          <Box
-            flex={1}
-            width={"100%"}
-            border="1px solid white"
-            borderRadius={1}
-          >
-            <Typography
-              variant="h6"
-              component="h3"
-              textAlign="center"
-              py={1}
-              bgcolor={"primary.main"}
-              color="white"
-            >
-              OnGoing
-            </Typography>
-            <Box height={{ xs: "35vh", md: "76vh" }} overflow="scroll">
-              {ongoing.map((task) => (
-                <Card
-                  key={task.id}
-                  sx={{ width: "100%", border: "1px solid black" }}
-                >
-                  <CardContent>
-                    <Stack
-                      direction={"row"}
-                      alignItems={"start"}
-                      justifyContent={"space-around"}
-                    >
-                      <Box flex={1}>
-                        <DragHandleIcon />
-                      </Box>
-                      <Box flex={1}>
-                        <Typography
-                          sx={{ fontSize: 14 }}
-                          color="primary.main"
-                          gutterBottom
-                          textAlign={"right"}
-                        >
-                          Priority: {task.priority}
-                        </Typography>
-                        <Typography
-                          sx={{ fontSize: 14, color: "red" }}
-                          color="text.secondary"
-                          textAlign={"right"}
-                          gutterBottom
-                        >
-                          {task.deadline}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                    <Typography variant="h5" component="div">
-                      {task.title}
-                    </Typography>
-                    <Divider sx={{ mb: 1 }} />
-                    <Typography variant="body2">{task.description}</Typography>
-                  </CardContent>
-                  <CardActions>
-                    <IconButton>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton>
-                      <DeleteIcon />
-                    </IconButton>
-                  </CardActions>
-                </Card>
-              ))}
-            </Box>
-          </Box>
-
-          <Box
-            flex={1}
-            width={"100%"}
-            border="1px solid white"
-            borderRadius={1}
-          >
-            <Typography
-              variant="h6"
-              component="h3"
-              textAlign="center"
-              py={1}
-              bgcolor={"primary.main"}
-              color="white"
-            >
-              Completed
-            </Typography>
-            <Box height={{ xs: "35vh", md: "76vh" }} overflow="scroll">
-              {complete.map((task) => (
-                <Card
-                  key={task.id}
-                  sx={{ width: "100%", border: "1px solid black" }}
-                >
-                  <CardContent>
-                    <Stack
-                      direction={"row"}
-                      alignItems={"start"}
-                      justifyContent={"space-around"}
-                    >
-                      <Box flex={1}>
-                        <DragHandleIcon />
-                      </Box>
-                      <Box flex={1}>
-                        <Typography
-                          sx={{ fontSize: 14 }}
-                          color="primary.main"
-                          gutterBottom
-                          textAlign={"right"}
-                        >
-                          Priority: {task.priority}
-                        </Typography>
-                        <Typography
-                          sx={{ fontSize: 14, color: "red" }}
-                          color="text.secondary"
-                          textAlign={"right"}
-                          gutterBottom
-                        >
-                          {task.deadline}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                    <Typography variant="h5" component="div">
-                      {task.title}
-                    </Typography>
-                    <Divider sx={{ mb: 1 }} />
-                    <Typography variant="body2">{task.description}</Typography>
-                  </CardContent>
-                  <CardActions>
-                    <IconButton>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton>
-                      <DeleteIcon />
-                    </IconButton>
-                  </CardActions>
-                </Card>
-              ))}
-            </Box>
-          </Box>
+            <TaskContainer id="todo" text="Todo" tasks={todo} />
+            <TaskContainer id="ongoing" text="Ongoing" tasks={ongoing} />
+            <TaskContainer id="complete" text="Completed" tasks={complete} />
+            <DragOverlay>
+              {activeTask ? (
+                <TaskItem id={activeTask.id} task={activeTask} />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         </Stack>
       </Container>
     </Box>
   );
+
+  function handleDragStart(event) {
+    setActiveTask(event.active.data.current.task);
+    // console.log(event.active.data.current.task);
+  }
+
+  function handleDragOver(event) {
+    console.log("over:", event);
+  }
+
+  function handleDragEnd(event) {
+    console.log("end:", event);
+  }
 };
 
 export default Dashboard;
+
+const TaskContainer = ({ id, text, tasks }) => {
+  const { setNodeRef } = useDroppable({
+    id,
+  });
+
+  const ids = useMemo(() => {
+    return tasks.map((task) => task.id);
+  }, [tasks]);
+
+  return (
+    <>
+      <Box flex={1} width={"100%"} border="1px solid white" borderRadius={1}>
+        <Typography
+          variant="h6"
+          component="h3"
+          textAlign="center"
+          py={1}
+          sx={{ bgcolor: (theme) => `${theme.palette.primary.main}80` }}
+          color="white"
+        >
+          {text}
+        </Typography>
+
+        <SortableContext
+          id={id}
+          items={ids}
+          strategy={verticalListSortingStrategy}
+        >
+          <Box
+            ref={setNodeRef}
+            height={{ xs: "35vh", md: "76vh" }}
+            sx={{ overflowX: "hidden", overflowY: "auto" }}
+          >
+            {tasks.map((task) => (
+              <TaskItem task={task} key={task.id} />
+            ))}
+          </Box>
+        </SortableContext>
+      </Box>
+    </>
+  );
+};
+
+const TaskItem = ({ task }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: task.id,
+    data: {
+      type: "Task",
+      task,
+    },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  if (isDragging)
+    return (
+      <Card
+        ref={setNodeRef}
+        {...attributes}
+        {...listeners}
+        style={style}
+        sx={{ width: "100%", border: "1px solid black", opacity: .5 }}
+      >
+        <CardContent>
+          <Stack
+            direction={"row"}
+            alignItems={"start"}
+            justifyContent={"space-around"}
+          >
+            <Box flex={1}>
+              <DragHandleIcon />
+            </Box>
+            <Box flex={1}>
+              <Typography
+                sx={{ fontSize: 14 }}
+                color="primary.main"
+                gutterBottom
+                textAlign={"right"}
+              >
+                Priority: {task.priority}
+              </Typography>
+              <Typography
+                sx={{ fontSize: 14, color: "red" }}
+                color="text.secondary"
+                textAlign={"right"}
+                gutterBottom
+              >
+                {task.deadline}
+              </Typography>
+            </Box>
+          </Stack>
+          <Typography variant="h5" component="div">
+            {task.title}
+          </Typography>
+          <Divider sx={{ mb: 1 }} />
+          <Typography variant="body2">{task.description}</Typography>
+        </CardContent>
+        <CardActions>
+          <IconButton>
+            <EditIcon />
+          </IconButton>
+          <IconButton>
+            <DeleteIcon />
+          </IconButton>
+        </CardActions>
+      </Card>
+    );
+
+  return (
+    <Card
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={style}
+      sx={{ width: "100%", border: "1px solid black" }}
+    >
+      <CardContent>
+        <Stack
+          direction={"row"}
+          alignItems={"start"}
+          justifyContent={"space-around"}
+        >
+          <Box flex={1}>
+            <DragHandleIcon />
+          </Box>
+          <Box flex={1}>
+            <Typography
+              sx={{ fontSize: 14 }}
+              color="primary.main"
+              gutterBottom
+              textAlign={"right"}
+            >
+              Priority: {task.priority}
+            </Typography>
+            <Typography
+              sx={{ fontSize: 14, color: "red" }}
+              color="text.secondary"
+              textAlign={"right"}
+              gutterBottom
+            >
+              {task.deadline}
+            </Typography>
+          </Box>
+        </Stack>
+        <Typography variant="h5" component="div">
+          {task.title}
+        </Typography>
+        <Divider sx={{ mb: 1 }} />
+        <Typography variant="body2">{task.description}</Typography>
+      </CardContent>
+      <CardActions>
+        <IconButton>
+          <EditIcon />
+        </IconButton>
+        <IconButton>
+          <DeleteIcon />
+        </IconButton>
+      </CardActions>
+    </Card>
+  );
+};
