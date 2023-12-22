@@ -1,4 +1,4 @@
-import { Box, Container, Divider, Stack, Typography } from "@mui/material";
+import { Box, Container, Typography } from "@mui/material";
 
 const Feature = () => {
   return (

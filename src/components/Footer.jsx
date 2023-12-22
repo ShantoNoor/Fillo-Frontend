@@ -24,7 +24,7 @@ const Footer = () => {
       py={2}
       sx={{
         background:
-          pathname === "/"
+          pathname === "/" || pathname === "/dashboard"
             ? "linear-gradient(rgba(1, 1, 1, 0.4), rgba(5, 5, 5, 0.7)), url(https://comuti.in/wp-content/uploads/2021/07/footer-bg.png)"
             : "",
         backgroundRepeat: "no-repeat",
@@ -45,7 +45,7 @@ const Footer = () => {
               direction={"row"}
               divider={
                 <Divider
-                  color={pathname === "/" ? "white" : "black"}
+                  color={pathname === "/" || pathname === "/dashboard" ? "white" : "black"}
                   orientation="vertical"
                   flexItem
                 />
@@ -64,16 +64,16 @@ const Footer = () => {
             display={"flex"}
             gap={1}
             flexDirection={"row"}
-            alignItems={"center"}
+            alignItems={"start"}
           >
             <LogoIcon
               onClick={navigateHome}
               cursor={"pointer"}
               sx={{
                 fontSize: { xs: "3rem" },
-                color: pathname === "/" ? "white" : "black",
+                color: pathname === "/" || pathname === "/dashboard" ? "white" : "black",
                 textShadow:
-                  pathname === "/" ? "2px 2px 4px rgba(0, 0, 0, .75)" : "",
+                  pathname === "/" || pathname === "/dashboard" ? "2px 2px 4px rgba(0, 0, 0, .75)" : "",
               }}
             />
             <Typography
@@ -86,11 +86,11 @@ const Footer = () => {
                 fontFamily: "monospace",
                 fontWeight: 700,
                 letterSpacing: ".3rem",
-                color: pathname === "/" ? "white" : "black",
+                color: pathname === "/" || pathname === "/dashboard" ? "white" : "black",
                 textDecoration: "none",
                 flexGrow: 1,
                 textShadow:
-                  pathname === "/" ? "2px 2px 4px rgba(0, 0, 0, .75)" : "",
+                  pathname === "/" || pathname === "/dashboard" ? "2px 2px 4px rgba(0, 0, 0, .75)" : "",
               }}
             >
               {logoText}
@@ -103,7 +103,7 @@ const Footer = () => {
               gap={1}
               divider={
                 <Divider
-                  color={pathname === "/" ? "white" : "black"}
+                  color={pathname === "/" || pathname === "/dashboard" ? "white" : "black"}
                   orientation="vertical"
                   flexItem
                 />
@@ -124,8 +124,8 @@ const Footer = () => {
             </Stack>
           </Box>
         </Stack>
-        <Divider color={pathname === "/" ? "white" : "black"} />
-        <Copyright color={pathname === "/" ? "white" : "black"} my={3} />
+        <Divider color={pathname === "/" || pathname === "/dashboard" ? "white" : "black"} />
+        <Copyright color={pathname === "/" || pathname === "/dashboard" ? "white" : "black"} my={3} />
       </Container>
     </Box>
   );
