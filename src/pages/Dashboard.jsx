@@ -1,12 +1,18 @@
 import {
   Box,
+  Button,
   Card,
   CardActions,
   CardContent,
   Container,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Divider,
+  Fab,
   IconButton,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import Title from "../components/Title";
@@ -15,6 +21,9 @@ import DragHandleIcon from "@mui/icons-material/DragHandle";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useEffect, useMemo, useState } from "react";
+import SelectFormField from "../components/SelectFormField";
+import { DatePicker } from "@mui/x-date-pickers";
+import AddIcon from "@mui/icons-material/Add";
 
 import {
   DndContext,
@@ -40,10 +49,23 @@ import { axiosn } from "../hooks/useAxios";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import Spinner from "../components/Spinner";
+import { Controller, useForm } from "react-hook-form";
+import moment from "moment";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const [activeTask, setActiveTask] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      await axiosn.post("/tasklists", {
+        ongoing: JSON.stringify(""),
+        todo: JSON.stringify(""),
+        complete: JSON.stringify(""),
+        user: user._id,
+      });
+    })();
+  }, [user]);
 
   const { data, isPending, error } = useQuery({
     queryKey: ["/tasklists", `user=${user._id}`],
@@ -76,62 +98,178 @@ const Dashboard = () => {
     })
   );
 
+  const { handleSubmit, control, register, reset } = useForm({});
+
+  const [open2, setOpen2] = useState(false);
+
+  const handleClose2 = () => {
+    setOpen2(false);
+  };
+
+  const formSubmit = async (data) => {
+    data.deadline = data.deadline.utc().format("DD-MM-YYYY");
+    // console.log(data);
+    data.id = moment.now();
+    data.status = "todo";
+
+    setTodo((prev) => [data, ...prev]);
+
+    addToDb();
+
+    reset();
+    handleClose2();
+  };
+
   if (isPending) return <Spinner />;
   if (error) return "An error has occurred: " + error.message;
 
   return (
-    <Box
-      sx={{
-        background:
-          "linear-gradient(rgba(1, 1, 1, 0.4), rgba(5, 5, 5, 0.7)), url(https://unblast.com/wp-content/uploads/2021/01/Space-Background-Image-5.jpg)",
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <Container>
-        <Title>{`${user.name} - Dashboard`}</Title>
-        <Stack
-          direction={{ md: "row" }}
-          gap={2}
-          py={3}
-          justifyContent={"space-between"}
-          alignItems={"center"}
-        >
-          <DndContext
-            sensors={sensors}
-            collisionDetection={rectIntersection}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
+    <>
+      <Box
+        sx={{
+          background:
+            "linear-gradient(rgba(1, 1, 1, 0.4), rgba(5, 5, 5, 0.7)), url(https://unblast.com/wp-content/uploads/2021/01/Space-Background-Image-5.jpg)",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <Container>
+          <Title>{`${user.name} - Dashboard`}</Title>
+          <Fab
+            size="medium"
+            color="primary"
+            aria-label="add"
+            style={{
+              position: "absolute",
+              right: "5%",
+              bottom: "10%",
+            }}
+            onClick={() => {
+              setOpen2((prev) => !prev);
+            }}
           >
-            <TaskContainer
-              id="todo"
-              text="Todo"
-              tasks={todo}
-              setTasks={setTodo}
+            <AddIcon />
+          </Fab>
+          <Stack
+            direction={{ md: "row" }}
+            gap={2}
+            py={3}
+            justifyContent={"space-between"}
+            alignItems={"center"}
+          >
+            <DndContext
+              sensors={sensors}
+              collisionDetection={rectIntersection}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+            >
+              <TaskContainer
+                id="todo"
+                text="Todo"
+                tasks={todo}
+                setTasks={setTodo}
+              />
+              <TaskContainer
+                id="ongoing"
+                text="Ongoing"
+                tasks={ongoing}
+                setTasks={setOngoing}
+              />
+              <TaskContainer
+                id="complete"
+                text="Complete"
+                tasks={complete}
+                setTasks={setComplete}
+              />
+              <DragOverlay>
+                {activeTask ? (
+                  <TaskItem id={activeTask.id} task={activeTask} />
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          </Stack>
+        </Container>
+      </Box>
+      <Dialog open={open2} onClose={handleClose2} fullWidth>
+        <DialogTitle>Add a Task | Fillo</DialogTitle>
+        <DialogContent>
+          <Stack
+            component="form"
+            onSubmit={handleSubmit(formSubmit)}
+            sx={{ width: "100%" }}
+            spacing={2}
+          >
+            <TextField
+              variant="standard"
+              fullWidth
+              label="Title"
+              {...register("title", {
+                required: "Title is required",
+              })}
             />
-            <TaskContainer
-              id="ongoing"
-              text="Ongoing"
-              tasks={ongoing}
-              setTasks={setOngoing}
+
+            <TextField
+              variant="standard"
+              fullWidth
+              label="Description"
+              {...register("description", {
+                required: "Description is required",
+              })}
             />
-            <TaskContainer
-              id="complete"
-              text="complete"
-              tasks={complete}
-              setTasks={setComplete}
-            />
-            <DragOverlay>
-              {activeTask ? (
-                <TaskItem id={activeTask.id} task={activeTask} />
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-        </Stack>
-      </Container>
-    </Box>
+
+            <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+              <SelectFormField
+                name={"priority"}
+                label={"Select a Priority"}
+                control={control}
+                defaultValue="Low"
+                options={[
+                  { value: "Low", label: "Low" },
+                  { value: "Moderate", label: "Moderate" },
+                  { value: "High", label: "High" },
+                ]}
+              />
+            </Stack>
+
+            <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+              <Box flex={1}>
+                <Controller
+                  name="deadline"
+                  control={control}
+                  defaultValue={null}
+                  render={({ field }) => (
+                    <DatePicker
+                      {...field}
+                      sx={{ width: "100%" }}
+                      slotProps={{
+                        textField: {
+                          variant: "standard",
+                          helperText: "MM/DD/YYYY",
+                        },
+                      }}
+                      label="Deadline"
+                      render={(params) => <TextField {...params} />}
+                      disablePast={true}
+                    />
+                  )}
+                />
+              </Box>
+            </Stack>
+
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
+            >
+              Submit
+            </Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 
   function handleDragStart(event) {
@@ -200,6 +338,10 @@ const Dashboard = () => {
     // console.log(JSON.stringify(ongoing));
     // console.log(JSON.stringify(complete));
 
+    addToDb();
+  }
+
+  function addToDb() {
     const toastId = toast.loading("Updating into database ...");
     setTimeout(async () => {
       try {

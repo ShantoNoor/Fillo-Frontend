@@ -35,6 +35,7 @@ const SocialLogin = () => {
               photo: user.photoURL,
             };
             const result = await axiosn.post("/users", data);
+            // console.log(result);
 
             await axiosn.post("/tasklists", {
               ongoing: JSON.stringify(""),
