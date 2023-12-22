@@ -34,8 +34,16 @@ const SocialLogin = () => {
               email: user.email,
               photo: user.photoURL,
             };
-            await axiosn.post("/users", data);
-            setUser(data);
+            const result = await axiosn.post("/users", data);
+
+            await axiosn.post("/tasklists", {
+              ongoing: JSON.stringify(""),
+              todo: JSON.stringify(""),
+              complete: JSON.stringify(""),
+              user: result.data._id,
+            });
+
+            setUser(result.data);
           } catch (err) {
             if (err.response.status !== 409) {
               console.error(err);
@@ -58,8 +66,16 @@ const SocialLogin = () => {
               email: user.email,
               photo: user.photoURL,
             };
-            await axiosn.post("/users", data);
-            setUser(data);
+            const result = await axiosn.post("/users", data);
+
+            await axiosn.post("/tasklists", {
+              ongoing: JSON.stringify(""),
+              todo: JSON.stringify(""),
+              complete: JSON.stringify(""),
+              user: result.data._id,
+            });
+
+            setUser(result.data);
           } catch (err) {
             if (err.response.status !== 409) {
               console.error(err);

@@ -64,6 +64,13 @@ export default function SignUp() {
         ]);
 
         data._id = result[0].data._id;
+        await axiosn.post("/tasklists", {
+          ongoing: JSON.stringify(""),
+          todo: JSON.stringify(""),
+          complete: JSON.stringify(""),
+          user: data._id,
+        });
+
         setUser(data);
       }
     } catch (err) {

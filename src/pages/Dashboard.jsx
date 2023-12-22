@@ -36,115 +36,37 @@ import {
 } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
-
-const DATA = [
-  {
-    id: 1,
-    title: "Update Marketing Presentation",
-    description:
-      "Revise and enhance the marketing presentation with updated statistics, new visuals, and improved content structure.",
-    deadline: "2023-01-15",
-    priority: "High",
-    status: "ongoing",
-  },
-  {
-    id: 2,
-    title: "Conduct Customer Feedback Survey",
-    description:
-      "Develop a customer survey to gather feedback on recent product updates and overall satisfaction. Analyze results for actionable insights.",
-    deadline: "2023-02-05",
-    priority: "Moderate",
-    status: "ongoing",
-  },
-  {
-    id: 3,
-    title: "Revamp Company Website Homepage",
-    description:
-      "Redesign the homepage layout, optimize for mobile responsiveness, and incorporate new branding elements for an enhanced user experience.",
-    deadline: "2023-03-10",
-    priority: "High",
-    status: "ongoing",
-  },
-  {
-    id: 4,
-    title: "Organize Team Building Event",
-    description:
-      "Plan and coordinate a team-building activity to boost team morale and foster collaboration. Research and book suitable venues/activities.",
-    deadline: "2023-04-20",
-    priority: "Moderate",
-    status: "to_do",
-  },
-  {
-    id: 5,
-    title: "Review Quarterly Financial Reports",
-    description:
-      "Analyze and assess financial reports for Q1, highlighting key performance indicators and identifying areas for improvement.",
-    deadline: "2023-02-28",
-    priority: "High",
-    status: "complete",
-  },
-  {
-    id: 6,
-    title: "Create Social Media Content Calendar",
-    description:
-      "Develop a comprehensive social media content calendar for the upcoming quarter. Plan engaging content and schedule posts across platforms.",
-    deadline: "2023-03-15",
-    priority: "Moderate",
-    status: "to_do",
-  },
-  {
-    id: 7,
-    title: "Conduct Market Research for New Product Launch",
-    description:
-      "Gather market data and consumer insights to inform the launch strategy of a new product. Analyze competitors and identify target demographics.",
-    deadline: "2023-04-10",
-    priority: "High",
-    status: "ongoing",
-  },
-  {
-    id: 8,
-    title: "Organize Quarterly Performance Review Meetings",
-    description:
-      "Schedule and coordinate performance review sessions for all departments. Prepare necessary materials and facilitate discussions.",
-    deadline: "2023-05-05",
-    priority: "Moderate",
-    status: "to_do",
-  },
-  {
-    id: 9,
-    title: "Develop Training Modules for New Software Rollout",
-    description:
-      "Create training modules and materials to assist employees in learning a new software system. Design interactive and user-friendly content.",
-    deadline: "2023-06-20",
-    priority: "High",
-    status: "ongoing",
-  },
-  {
-    id: 10,
-    title: "Audit and Update Company Policies",
-    description:
-      "Review existing company policies, identify gaps, and update them to align with current regulations and best practices.",
-    deadline: "2023-07-15",
-    priority: "Moderate",
-    status: "to_do",
-  },
-];
+import { axiosn } from "../hooks/useAxios";
+import { useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import Spinner from "../components/Spinner";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const [activeTask, setActiveTask] = useState(null);
 
+  const { data, isPending, error } = useQuery({
+    queryKey: ["/tasklists", `user=${user._id}`],
+    queryFn: async () => {
+      try {
+        const res = await axiosn.get(`/tasklists?user=${user._id}`);
+        return res.data[0];
+      } catch (err) {
+        console.error(err);
+      }
+    },
+  });
+
   // eslint-disable-next-line no-unused-vars
-  const [tasks, setTasks] = useState(DATA);
   const [todo, setTodo] = useState([]);
   const [ongoing, setOngoing] = useState([]);
   const [complete, setComplete] = useState([]);
 
   useEffect(() => {
-    setTodo(tasks.filter((task) => task.status === "to_do"));
-    setOngoing(tasks.filter((task) => task.status === "ongoing"));
-    setComplete(tasks.filter((task) => task.status === "complete"));
-  }, [tasks]);
+    if (data?.todo) setTodo(JSON.parse(data?.todo));
+    if (data?.ongoing) setOngoing(JSON.parse(data?.ongoing));
+    if (data?.complete) setComplete(JSON.parse(data?.complete));
+  }, [data]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
@@ -153,6 +75,9 @@ const Dashboard = () => {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  if (isPending) return <Spinner />;
+  if (error) return "An error has occurred: " + error.message;
 
   return (
     <Box
@@ -180,9 +105,24 @@ const Dashboard = () => {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
-            <TaskContainer id="todo" text="Todo" tasks={todo} />
-            <TaskContainer id="ongoing" text="Ongoing" tasks={ongoing} />
-            <TaskContainer id="complete" text="complete" tasks={complete} />
+            <TaskContainer
+              id="todo"
+              text="Todo"
+              tasks={todo}
+              setTasks={setTodo}
+            />
+            <TaskContainer
+              id="ongoing"
+              text="Ongoing"
+              tasks={ongoing}
+              setTasks={setOngoing}
+            />
+            <TaskContainer
+              id="complete"
+              text="complete"
+              tasks={complete}
+              setTasks={setComplete}
+            />
             <DragOverlay>
               {activeTask ? (
                 <TaskItem id={activeTask.id} task={activeTask} />
@@ -214,23 +154,23 @@ const Dashboard = () => {
 
     if (activeTask.status !== overTask?.status) {
       if (
-        activeTask.status === "to_do" &&
+        activeTask.status === "todo" &&
         (overTask?.status === "ongoing" || over?.id === "ongoing")
       ) {
         setTodo((prev) => prev.filter((task) => task.id !== activeTask.id));
         setOngoing([{ ...activeTask, status: "ongoing" }, ...ongoing]);
       } else if (
-        activeTask.status === "to_do" &&
+        activeTask.status === "todo" &&
         (overTask?.status === "complete" || over?.id === "complete")
       ) {
         setTodo((prev) => prev.filter((task) => task.id !== activeTask.id));
         setComplete([{ ...activeTask, status: "complete" }, ...complete]);
       } else if (
         activeTask.status === "ongoing" &&
-        (overTask?.status === "to_do" || over?.id === "todo")
+        (overTask?.status === "todo" || over?.id === "todo")
       ) {
         setOngoing((prev) => prev.filter((task) => task.id !== activeTask.id));
-        setTodo([{ ...activeTask, status: "to_do" }, ...todo]);
+        setTodo([{ ...activeTask, status: "todo" }, ...todo]);
       } else if (
         activeTask.status === "ongoing" &&
         (overTask?.status === "complete" || over?.id === "complete")
@@ -239,10 +179,10 @@ const Dashboard = () => {
         setComplete([{ ...activeTask, status: "complete" }, ...complete]);
       } else if (
         activeTask.status === "complete" &&
-        (overTask?.status === "to_do" || over?.id === "todo")
+        (overTask?.status === "todo" || over?.id === "todo")
       ) {
         setComplete((prev) => prev.filter((task) => task.id !== activeTask.id));
-        setTodo([{ ...activeTask, status: "to_do" }, ...todo]);
+        setTodo([{ ...activeTask, status: "todo" }, ...todo]);
       } else if (
         activeTask.status === "complete" &&
         (overTask?.status === "ongoing" || over?.id === "ongoing")
@@ -254,6 +194,35 @@ const Dashboard = () => {
   }
 
   function handleDragEnd(event) {
+    _handleDragEnd_(event);
+
+    // console.log(JSON.stringify(todo));
+    // console.log(JSON.stringify(ongoing));
+    // console.log(JSON.stringify(complete));
+
+    const toastId = toast.loading("Updating into database ...");
+    setTimeout(async () => {
+      try {
+        await axiosn.put("/tasklists", {
+          ongoing: JSON.stringify(ongoing),
+          todo: JSON.stringify(todo),
+          complete: JSON.stringify(complete),
+          user: user._id,
+        });
+
+        toast.success("Successfully updated", {
+          id: toastId,
+        });
+      } catch (err) {
+        // console.error(err)
+        toast.success("Failed to update database.", {
+          id: toastId,
+        });
+      }
+    }, 500);
+  }
+
+  function _handleDragEnd_(event) {
     // console.log("end:", event);
     setActiveTask(null);
 
@@ -269,7 +238,7 @@ const Dashboard = () => {
     const overTask = over.data.current.task;
 
     if (activeTask.status === overTask?.status) {
-      if (activeTask.status === "to_do")
+      if (activeTask.status === "todo") {
         setTodo((prev_tasks) => {
           const activeTaskIndex = prev_tasks.findIndex(
             (task) => task.id === activeId
@@ -281,8 +250,7 @@ const Dashboard = () => {
 
           return arrayMove(prev_tasks, activeTaskIndex, overtTaskIndex);
         });
-
-      if (activeTask.status === "complete")
+      } else if (activeTask.status === "complete") {
         setComplete((prev_tasks) => {
           const activeTaskIndex = prev_tasks.findIndex(
             (task) => task.id === activeId
@@ -294,8 +262,7 @@ const Dashboard = () => {
 
           return arrayMove(prev_tasks, activeTaskIndex, overtTaskIndex);
         });
-
-      if (activeTask.status === "ongoing")
+      } else if (activeTask.status === "ongoing") {
         setOngoing((prev_tasks) => {
           const activeTaskIndex = prev_tasks.findIndex(
             (task) => task.id === activeId
@@ -307,13 +274,14 @@ const Dashboard = () => {
 
           return arrayMove(prev_tasks, activeTaskIndex, overtTaskIndex);
         });
+      }
     }
   }
 };
 
 export default Dashboard;
 
-const TaskContainer = ({ id, text, tasks }) => {
+const TaskContainer = ({ id, text, tasks, setTasks }) => {
   const { setNodeRef } = useDroppable({
     id,
     data: {
@@ -321,9 +289,9 @@ const TaskContainer = ({ id, text, tasks }) => {
     },
   });
 
-  const ids = useMemo(() => {
-    return tasks.map((task) => task.id);
-  }, [tasks]);
+  // const ids = useMemo(() => {
+  //   return tasks?.map((task) => task.id);
+  // }, [tasks]);
 
   return (
     <>
@@ -339,21 +307,33 @@ const TaskContainer = ({ id, text, tasks }) => {
           {text}
         </Typography>
 
-        <SortableContext
-          id={id}
-          items={ids}
-          strategy={verticalListSortingStrategy}
+        <Box
+          ref={setNodeRef}
+          height={{ xs: "35vh", md: "76vh" }}
+          sx={{ overflowX: "hidden", overflowY: "auto" }}
         >
-          <Box
-            ref={setNodeRef}
-            height={{ xs: "35vh", md: "76vh" }}
-            sx={{ overflowX: "hidden", overflowY: "auto" }}
-          >
-            {tasks.map((task) => (
-              <TaskItem task={task} key={task.id} />
-            ))}
-          </Box>
-        </SortableContext>
+          {typeof tasks !== "string" || tasks?.length !== 0 ? (
+            <SortableContext
+              id={id}
+              items={tasks}
+              strategy={verticalListSortingStrategy}
+            >
+              {tasks?.map((task) => (
+                <TaskItem task={task} key={task.id} />
+              ))}
+            </SortableContext>
+          ) : (
+            <Typography
+              pl={3}
+              pt={2}
+              color={"white"}
+              component="h6"
+              variant="h6"
+            >
+              No Tasks Found
+            </Typography>
+          )}
+        </Box>
       </Box>
     </>
   );
